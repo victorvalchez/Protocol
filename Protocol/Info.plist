@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Protocol needs your location to provide accurate sunlight recommendations based on local weather conditions.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string></string>
+	<string>Protocol needs access to your sleep data to calculate optimal caffeine timing based on your wake-up time.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Protocol needs to read your health data to optimize your daily protocol.</string>
 	<key>UIBackgroundModes</key>
 	<array/>
 </dict>

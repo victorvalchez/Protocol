@@ -12,7 +12,7 @@ import Combine
 final class CaffeineViewModel {
     // MARK: - Published Properties
     var isLocked: Bool = true
-    var remainingMinutes: Int = 0
+    var remainingMinutes: Int = 90
     var remainingSeconds: Int = 0
     
     // MARK: - Private Properties
@@ -34,6 +34,7 @@ final class CaffeineViewModel {
     
     // MARK: - Initialization
     init() {
+        // Start timer that updates every second
         startTimer()
     }
     
@@ -43,15 +44,20 @@ final class CaffeineViewModel {
     
     // MARK: - Public Methods
     
-    /// Update wake-up time and recalculate lock state
+    /// Update wake-up time and immediately recalculate lock state
     func updateWakeUpTime(_ time: Date?) {
         self.wakeUpTime = time
+        // Immediately update state when wake-up time changes
         updateLockState()
     }
     
     // MARK: - Private Methods
     
     private func startTimer() {
+        // Update immediately
+        updateLockState()
+        
+        // Then update every second
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateLockState()
         }
@@ -59,7 +65,7 @@ final class CaffeineViewModel {
     
     private func updateLockState() {
         guard let wakeUpTime = wakeUpTime else {
-            // Default to locked if no wake-up time
+            // No wake-up time available - show locked with default time
             isLocked = true
             remainingMinutes = 90
             remainingSeconds = 0

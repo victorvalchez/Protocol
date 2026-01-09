@@ -19,7 +19,7 @@ struct DashboardView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .center, spacing: 32) {
+            VStack(alignment: .center, spacing: 20) {
                 // Welcome Header
                 welcomeHeader
                 
@@ -27,7 +27,6 @@ struct DashboardView: View {
                 Rectangle()
                     .fill(Color.protocolText.opacity(0.1))
                     .frame(height: 1)
-                    .padding(.vertical, 8)
                 
                 // Morning Briefing Section
                 morningBriefingSection
@@ -44,6 +43,10 @@ struct DashboardView: View {
         }
         .onReceive(timer) { _ in
             viewModel.currentDate = Date()
+        }
+        .onAppear {
+            // Immediately update caffeine timer with current data
+            caffeineViewModel.updateWakeUpTime(healthManager.wakeUpTime)
         }
         .task {
             await refreshData()
@@ -74,7 +77,7 @@ struct DashboardView: View {
     
     // MARK: - Morning Briefing Section
     private var morningBriefingSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             // Solar Ring (full width)
             SolarRingView(
                 uvIndex: solarViewModel.uvIndex,

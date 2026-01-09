@@ -13,7 +13,7 @@ struct SolarRingView: View {
     let requiredMinutes: Int
     
     var body: some View {
-        HStack(spacing: 32) {
+        HStack(alignment: .center, spacing: 32) {
             // Progress Ring
             ZStack {
                 // Background ring
@@ -51,7 +51,7 @@ struct SolarRingView: View {
             .frame(width: 140, height: 140)
             
             // Metrics
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 // Header
                 Text("SOLAR EXPOSURE")
                     .font(.system(size: 11, weight: .bold))
@@ -85,13 +85,16 @@ struct SolarRingView: View {
             
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 }
 
 #Preview {
     VStack(spacing: 40) {
         SolarRingView(uvIndex: 7, progress: 0.65, requiredMinutes: 20)
+            .frame(height: 180)
         SolarRingView(uvIndex: 3, progress: 0.3, requiredMinutes: 10)
+            .frame(height: 180)
     }
     .padding()
     .background(Color.protocolBackground)

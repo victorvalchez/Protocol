@@ -14,33 +14,33 @@ struct DashboardView: View {
     @State private var healthManager = HealthManager()
     @State private var caffeineViewModel = CaffeineViewModel()
     @State private var solarViewModel = SolarViewModel()
+    @State private var waterViewModel = WaterViewModel()
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 32) {
-                    // Welcome Header
-                    welcomeHeader
-                    
-                    // Thin separator
-                    Rectangle()
-                        .fill(Color.protocolText.opacity(0.1))
-                        .frame(height: 1)
-                        .padding(.vertical, 8)
-                    
-                    // Morning Briefing Grid
-                    morningBriefingGrid(in: geometry)
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 40)
+        ScrollView {
+            VStack(alignment: .center, spacing: 32) {
+                // Welcome Header
+                welcomeHeader
+                
+                // Thin separator
+                Rectangle()
+                    .fill(Color.protocolText.opacity(0.1))
+                    .frame(height: 1)
+                    .padding(.vertical, 8)
+                
+                // Morning Briefing Section
+                morningBriefingSection
             }
-            .background(Color.protocolBackground)
-            .scrollIndicators(.hidden)
-            .refreshable {
-                await refreshData()
-            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 40)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color.protocolBackground)
+        .scrollIndicators(.hidden)
+        .refreshable {
+            await refreshData()
         }
         .onReceive(timer) { _ in
             viewModel.currentDate = Date()
@@ -69,22 +69,13 @@ struct DashboardView: View {
                 .tracking(1)
                 .padding(.top, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
-    // MARK: - Morning Briefing Grid
-    @ViewBuilder
-    private func morningBriefingGrid(in geometry: GeometryProxy) -> some View {
-        let width = geometry.size.width - 48 // Account for horizontal padding
-        let spacing: CGFloat = 16
-        
-        VStack(alignment: .leading, spacing: spacing) {
-            // Section header
-            Text("MORNING BRIEFING")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(Color.protocolSecondary)
-                .tracking(2)
-            
-            // Solar Ring (2x2 equivalent - full width)
+    // MARK: - Morning Briefing Section
+    private var morningBriefingSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Solar Ring (full width)
             SolarRingView(
                 uvIndex: solarViewModel.uvIndex,
                 progress: solarViewModel.progress,
@@ -98,14 +89,40 @@ struct DashboardView: View {
                 .frame(height: 1)
                 .padding(.vertical, 8)
             
-            // Caffeine Lock (1x2 - takes full width for visibility)
-            CaffeineLockView(
-                isLocked: caffeineViewModel.isLocked,
-                formattedCountdown: caffeineViewModel.formattedCountdown,
-                lockMessage: caffeineViewModel.lockMessage
-            )
-            .frame(height: 200)
+            // Grid with Caffeine Lock and Water Tracker
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16)
+                ],
+                spacing: 16
+            ) {
+                // Caffeine Lock (1x1)
+                CaffeineLockView(
+                    isLocked: caffeineViewModel.isLocked,
+                    formattedCountdown: caffeineViewModel.formattedCountdown,
+                    lockMessage: caffeineViewModel.lockMessage,
+                    wakeUpTime: healthManager.wakeUpTime
+                )
+                .frame(height: 220)
+                
+                // Water Tracker (1x1)
+                WaterTrackerView(
+                    currentIntake: waterViewModel.currentIntakeText,
+                    dailyGoal: waterViewModel.dailyGoalText,
+                    progress: waterViewModel.progress,
+                    customAmount: $waterViewModel.customAmount,
+                    onIncrement: {
+                        waterViewModel.addWater()
+                    },
+                    onDecrement: {
+                        waterViewModel.removeWater()
+                    }
+                )
+                .frame(height: 220)
+            }
         }
+        .frame(maxWidth: .infinity)
     }
     
     // MARK: - Data Refresh

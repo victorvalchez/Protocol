@@ -41,10 +41,6 @@ struct DashboardView: View {
         .onReceive(timer) { _ in
             viewModel.currentDate = Date()
         }
-        .onAppear {
-            // Immediately update caffeine timer with current data
-            caffeineViewModel.updateWakeUpTime(healthManager.wakeUpTime)
-        }
         .task {
             await refreshData()
         }
@@ -128,18 +124,31 @@ struct DashboardView: View {
     // MARK: - Data Refresh
     @MainActor
     private func refreshData() async {
+        print("🔄 Starting data refresh...")
+        
         // Request HealthKit authorization if needed
         if !healthManager.isAuthorized {
+            print("🔐 Requesting HealthKit authorization...")
             await healthManager.requestAuthorization()
         }
         
-        // Fetch health data (sleep/wake-up time)
+        // Fetch health data (sleep/wake-up time) FIRST
+        print("😴 Fetching wake-up time...")
         await healthManager.fetchWakeUpTime()
         
-        // Update caffeine viewmodel with wake-up time from HealthManager
+        // Print wake-up time for debugging
+        if let wakeTime = healthManager.wakeUpTime {
+            print("✅ Wake-up time fetched: \(wakeTime)")
+        } else {
+            print("⚠️ No wake-up time available")
+        }
+        
+        // THEN update caffeine viewmodel with the fetched wake-up time
+        print("⏱️ Updating caffeine timer with wake-up time...")
         caffeineViewModel.updateWakeUpTime(healthManager.wakeUpTime)
         
-        // Fetch weather data
+        // Fetch weather data (can be async)
+        print("🌤️ Fetching weather...")
         await weatherManager.fetchWeather()
         
         // Update solar viewmodel
@@ -147,6 +156,8 @@ struct DashboardView: View {
             uvIndex: weatherManager.uvIndex,
             requiredMinutes: weatherManager.sunlightRequiredMinutes
         )
+        
+        print("✅ Data refresh complete")
     }
 }
 

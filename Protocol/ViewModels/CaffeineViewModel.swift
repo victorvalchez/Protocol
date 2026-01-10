@@ -46,9 +46,11 @@ final class CaffeineViewModel {
     
     /// Update wake-up time and immediately recalculate lock state
     func updateWakeUpTime(_ time: Date?) {
+        print("⏰ CaffeineViewModel: updateWakeUpTime called with: \(time?.description ?? "nil")")
         self.wakeUpTime = time
         // Immediately update state when wake-up time changes
         updateLockState()
+        print("⏰ CaffeineViewModel: After update - isLocked: \(isLocked), countdown: \(formattedCountdown)")
     }
     
     // MARK: - Private Methods

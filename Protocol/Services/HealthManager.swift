@@ -52,7 +52,10 @@ final class HealthManager {
     /// Fetch the most recent sleep session's wake-up time
     @MainActor
     func fetchWakeUpTime() async {
+        print("🛏️ HealthManager: Starting fetchWakeUpTime...")
+        
         guard isHealthDataAvailable else {
+            print("❌ HealthManager: Health data not available")
             errorMessage = "Health data not available"
             return
         }
@@ -62,40 +65,53 @@ final class HealthManager {
         
         let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
         
-        // Query for most recent sleep session
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-        let query = HKSampleQuery(
-            sampleType: sleepType,
-            predicate: nil,
-            limit: 1,
-            sortDescriptors: [sortDescriptor]
-        ) { [weak self] _, samples, error in
-            Task { @MainActor in
-                guard let self = self else { return }
-                
-                if let error = error {
-                    self.errorMessage = "Failed to fetch sleep data: \(error.localizedDescription)"
+        // Use continuation to properly await the query completion
+        await withCheckedContinuation { continuation in
+            // Query for most recent sleep session
+            let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+            let query = HKSampleQuery(
+                sampleType: sleepType,
+                predicate: nil,
+                limit: 1,
+                sortDescriptors: [sortDescriptor]
+            ) { [weak self] _, samples, error in
+                Task { @MainActor in
+                    guard let self = self else {
+                        continuation.resume()
+                        return
+                    }
+                    
+                    if let error = error {
+                        print("❌ HealthManager: Query error: \(error.localizedDescription)")
+                        self.errorMessage = "Failed to fetch sleep data: \(error.localizedDescription)"
+                        self.isLoading = false
+                        continuation.resume()
+                        return
+                    }
+                    
+                    if let sleepSample = samples?.first as? HKCategorySample {
+                        // Extract wake-up time (end date of sleep session)
+                        self.wakeUpTime = sleepSample.endDate
+                        print("✅ HealthManager: Found sleep data - wake-up time: \(sleepSample.endDate)")
+                    } else {
+                        // Fallback: Use a default wake-up time if no sleep data
+                        let calendar = Calendar.current
+                        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+                        components.hour = 7
+                        components.minute = 0
+                        self.wakeUpTime = calendar.date(from: components)
+                        print("⚠️ HealthManager: No sleep data found, using default 7:00 AM: \(self.wakeUpTime?.description ?? "nil")")
+                        self.errorMessage = "No sleep data found, using default wake-up time (7:00 AM)"
+                    }
+                    
                     self.isLoading = false
-                    return
+                    continuation.resume()
                 }
-                
-                if let sleepSample = samples?.first as? HKCategorySample {
-                    // Extract wake-up time (end date of sleep session)
-                    self.wakeUpTime = sleepSample.endDate
-                } else {
-                    // Fallback: Use a default wake-up time if no sleep data
-                    let calendar = Calendar.current
-                    var components = calendar.dateComponents([.year, .month, .day], from: Date())
-                    components.hour = 7
-                    components.minute = 0
-                    self.wakeUpTime = calendar.date(from: components)
-                    self.errorMessage = "No sleep data found, using default wake-up time (7:00 AM)"
-                }
-                
-                self.isLoading = false
             }
+            
+            healthStore.execute(query)
         }
         
-        healthStore.execute(query)
+        print("✅ HealthManager: fetchWakeUpTime completed, wakeUpTime = \(wakeUpTime?.description ?? "nil")")
     }
 }

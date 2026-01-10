@@ -9,8 +9,18 @@ import Foundation
 
 @Observable
 final class WaterViewModel {
+    // MARK: - UserDefaults Keys
+    private enum Keys {
+        static let currentIntake = "waterIntake"
+        static let lastSavedDate = "waterLastSavedDate"
+    }
+    
     // MARK: - Published Properties
-    var currentIntake: Int = 0 // in ml
+    var currentIntake: Int = 0 {
+        didSet {
+            saveIntake()
+        }
+    }
     var dailyGoal: Int = 4000 // 4L in ml
     var customAmount: String = "250" // User input for custom amount
     
@@ -39,6 +49,12 @@ final class WaterViewModel {
         Int(customAmount) ?? 250
     }
     
+    // MARK: - Initialization
+    init() {
+        loadIntake()
+        checkForNewDay()
+    }
+    
     // MARK: - Public Methods
     
     /// Add water intake using custom amount
@@ -56,5 +72,28 @@ final class WaterViewModel {
     /// Reset daily intake
     func resetDaily() {
         currentIntake = 0
+    }
+    
+    // MARK: - Persistence
+    
+    private func saveIntake() {
+        UserDefaults.standard.set(currentIntake, forKey: Keys.currentIntake)
+        UserDefaults.standard.set(Date(), forKey: Keys.lastSavedDate)
+    }
+    
+    private func loadIntake() {
+        currentIntake = UserDefaults.standard.integer(forKey: Keys.currentIntake)
+    }
+    
+    private func checkForNewDay() {
+        guard let lastSaved = UserDefaults.standard.object(forKey: Keys.lastSavedDate) as? Date else {
+            return
+        }
+        
+        let calendar = Calendar.current
+        if !calendar.isDateInToday(lastSaved) {
+            // New day - reset intake
+            resetDaily()
+        }
     }
 }

@@ -38,9 +38,6 @@ struct DashboardView: View {
         }
         .background(Color.protocolBackground)
         .scrollIndicators(.hidden)
-        .refreshable {
-            await refreshData()
-        }
         .onReceive(timer) { _ in
             viewModel.currentDate = Date()
         }
